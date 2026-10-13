@@ -27,6 +27,9 @@ async function fetchPokemonData(id) {
 }
 
 export default function App() {
+    const [scoreData, setScoreData] = useState({highScore: 0, currentScore: 0});
+    const [scoredIDs, setScoredIDs] = useState([]);
+    
     const [getNewPokemon, setGetNewPokemon] = useState(true);
     const [loadingPokemon, setLoadingPokemon] = useState(true);
 
@@ -87,6 +90,7 @@ export default function App() {
      */
     function handleCardClick(id) {
         shuffleCards();
+        updateScoreState(id);
     }
 
     function shuffleCards() {
@@ -103,8 +107,42 @@ export default function App() {
         setPokemonData(toShuffle);
     }
 
+    /**
+     * Updates score state - Current and high score, and already scored IDs
+     * @param {Number} id ID of pokemon to check if already scored OR -1 to completely reset score state
+     */
+    function updateScoreState(id) {
+        let scoreInfo = {...scoreData};
+        let newScoredIDs = [];
+
+        // -1 resets all score data
+        if (id === -1) {
+            scoreInfo.currentScore = 0;
+            scoreInfo.highScore = 0;
+        } else {
+            // If the ID was already Scored reset current score
+            if (scoredIDs.includes(id)) {
+                scoreInfo.currentScore = 0;
+            } else {
+                scoreInfo.currentScore += 1;
+                if (scoreInfo.currentScore > scoreInfo.highScore) {
+                    scoreInfo.highScore += 1;
+                }
+                newScoredIDs = [...scoredIDs];
+                newScoredIDs.push(id);
+            }
+        }
+
+        setScoreData(scoreInfo);
+        setScoredIDs(newScoredIDs);
+    }
+
     return (
         <>
+            <div id="scoreContainer">
+                <p>Current Score: {scoreData.currentScore}</p>
+                <p>High Score: {scoreData.highScore}</p>
+            </div>
             <div id="cardContainer">
                 {loadingPokemon === true ? (
                     <div>Loading Data</div>
@@ -123,6 +161,7 @@ export default function App() {
             <button
                 onClick={() => {
                     setGetNewPokemon(true);
+                    updateScoreState(-1);
                 }}
             >
                 Get New Pokemon
