@@ -1,31 +1,3 @@
-import { useState, useEffect } from "react";
-import Card from "./components/Card";
-
-import "./styles/App.css";
-
-let pokemonPoolSize = 10;
-const POKEMON_MAX_ID = 1026;
-
-function updatePokemonPoolSize(newCount) {
-    pokemonPoolSize = newCount;
-}
-
-async function fetchPokemonData(id) {
-    let pokemon = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
-    if (!pokemon.ok) {
-        throw new Error(`'Response status: + ${pokemon.status}`);
-    }
-
-    let pokemonJson = await pokemon.json();
-    let pokemonData = {
-        id: id,
-        name: pokemonJson.species.name,
-        imageURL: pokemonJson.sprites.other["official-artwork"].front_default,
-    };
-
-    return pokemonData;
-}
-
 let pokemonPoolSize = 10;
 const POKEMON_MAX_ID = 1026;
 
