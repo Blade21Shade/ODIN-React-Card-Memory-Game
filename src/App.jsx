@@ -58,8 +58,7 @@ export default function App() {
                 for (let i = 0; i < idIncludedList.length; i++) {
                     fetchFromPokeAPI.push(fetchPokemonData(idIncludedList[i]));
                 }
-                const allPokemonData =
-                    await Promise.allSettled(fetchFromPokeAPI);
+                const allPokemonData = await Promise.allSettled(fetchFromPokeAPI);
 
                 let newPokemonData = [];
                 for (let i = 0; i < allPokemonData.length; i++) {
@@ -86,7 +85,23 @@ export default function App() {
      * Logic for when a card is clicked
      * @param {Number} id The ID belonging to the pokemon belonging to the Card
      */
-    function handleCardClick(id) {}
+    function handleCardClick(id) {
+        shuffleCards();
+    }
+
+    function shuffleCards() {
+        let toShuffle = [...pokemonData];
+
+        for (let i = toShuffle.length - 1; i > 0; i--) { // Fisher-yates shuffle
+            // Pick a random index from 0 to i
+            const j = Math.floor(Math.random() * (i + 1));
+            
+            // Swap elements using array destructuring
+            [toShuffle[i], toShuffle[j]] = [toShuffle[j], toShuffle[i]];
+        }
+
+        setPokemonData(toShuffle);
+    }
 
     return (
         <>
