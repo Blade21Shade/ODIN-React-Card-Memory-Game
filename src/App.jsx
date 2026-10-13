@@ -1,3 +1,8 @@
+import { useState, useEffect } from "react";
+import Card from "./components/Card";
+
+import "./styles/App.css";
+
 let pokemonPoolSize = 10;
 const POKEMON_MAX_ID = 1026;
 
