@@ -142,6 +142,7 @@ export default function App() {
             <div id="scoreContainer">
                 <p>Current Score: {scoreData.currentScore}</p>
                 <p>High Score: {scoreData.highScore}</p>
+                <button onClick={()=>{updateScoreState(-1)}}>Reset Scores</button>
             </div>
             <div id="cardContainer">
                 {loadingPokemon === true ? (
