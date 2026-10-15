@@ -1,14 +1,10 @@
 import { useState, useEffect } from "react";
 import Card from "./components/Card";
+import SettingsModal from "./components/SettingsModal";
 
 import "./styles/App.css";
 
-let pokemonPoolSize = 10;
 const POKEMON_MAX_ID = 1026;
-
-function updatePokemonPoolSize(newCount) {
-  pokemonPoolSize = newCount;
-}
 
 async function fetchPokemonData(id) {
 	let pokemon = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
@@ -27,6 +23,8 @@ async function fetchPokemonData(id) {
 }
 
 export default function App() {
+    const [pokemonPoolSize, setPokemonPoolSize] = useState(10);
+    
     const [scoreData, setScoreData] = useState({highScore: 0, currentScore: 0});
     const [scoredIDs, setScoredIDs] = useState([]);
     
@@ -137,6 +135,11 @@ export default function App() {
         setScoredIDs(newScoredIDs);
     }
 
+    function updatePokemonPoolSize(newSize) {
+        setPokemonPoolSize(newSize);
+        setGetNewPokemon(true);
+    }
+
     return (
         <>
             <div id="scoreContainer">
@@ -144,6 +147,10 @@ export default function App() {
                 <p>High Score: {scoreData.highScore}</p>
                 <button onClick={()=>{updateScoreState(-1)}}>Reset Scores</button>
             </div>
+            <SettingsModal
+                currentPoolSize={pokemonPoolSize}
+                updatePoolSize={updatePokemonPoolSize}
+            ></SettingsModal>
             <div id="cardContainer">
                 {loadingPokemon === true ? (
                     <div>Loading Data</div>
