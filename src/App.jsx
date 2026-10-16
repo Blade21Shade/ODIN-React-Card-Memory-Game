@@ -23,7 +23,9 @@ async function fetchPokemonData(id) {
 }
 
 export default function App() {
-    const [pokemonPoolSize, setPokemonPoolSize] = useState(10);
+    const [gameSettings, setGameSettings] = useState({
+        poolSize: 10
+    });
     
     const [scoreData, setScoreData] = useState({highScore: 0, currentScore: 0});
     const [scoredIDs, setScoredIDs] = useState([]);
@@ -47,7 +49,7 @@ export default function App() {
             if (getNewPokemon) {
                 let idIncludedList = [];
                 let idCount = 0;
-                while (idCount < pokemonPoolSize) {
+                while (idCount < gameSettings.poolSize) {
                     let id = Math.floor(Math.random() * POKEMON_MAX_ID) + 1; // IDs start at 1, so +1
                     if (!idIncludedList.includes(id)) {
                         idCount++;
@@ -135,9 +137,57 @@ export default function App() {
         setScoredIDs(newScoredIDs);
     }
 
-    function updatePokemonPoolSize(newSize) {
-        setPokemonPoolSize(newSize);
-        setGetNewPokemon(true);
+    function resetGameScores() {
+        setScoreData({highScore: 0, currentScore: 0});
+    }
+
+    function updateGameSettings(newSettings) {
+        // This will only be written for poolSize for now since that's the only setting currently made
+
+        let anyChanges = false;
+        // Check each setting and update as needed
+        let updatedSettings = structuredClone(gameSettings);
+        let newSettingsKeys = Object.keys(newSettings);
+        for (const key of newSettingsKeys) {
+            let keyValue;
+            switch(key) {
+                case 'poolSize':
+                    if (newSettings[key] === updatedSettings[key]) {
+                        continue;
+                    }
+
+                    keyValue = newSettings[key];
+                    if (!keyValue) { // This could be 0, but in this instance that would be a bad value, so the below message is fine
+                        console.log(`Key '${key}' doesn't have a value, skipping`);
+                        continue;
+                    }
+
+                    let keyType = typeof keyValue;
+                    if (keyType !== 'number') {
+                        console.log(`Key '${key}' must be type 'number' but is type '${keyType}', skipping`);
+                        continue;
+                    }
+
+                    if (keyValue < 10) {
+                        keyValue = 10;
+                    } else if (keyValue > 1000) {
+                        keyValue = 1000;
+                    }
+                    
+                    anyChanges = true;
+                    updatedSettings[key] = keyValue;
+                    break;
+                default:
+                    console.log(`Invalid key given when updating user settings, skipping key: ${key}`);
+                    break;
+            }
+        }
+
+        if (anyChanges) {
+            setGameSettings(updatedSettings);
+            resetGameScores();
+            setGetNewPokemon(true);
+        }
     }
 
     return (
@@ -148,8 +198,8 @@ export default function App() {
                 <button onClick={()=>{updateScoreState(-1)}}>Reset Scores</button>
             </div>
             <SettingsModal
-                currentPoolSize={pokemonPoolSize}
-                updatePoolSize={updatePokemonPoolSize}
+                currentSettings={gameSettings}
+                updateGameSettings={updateGameSettings}
             ></SettingsModal>
             <div id="cardContainer">
                 {loadingPokemon === true ? (

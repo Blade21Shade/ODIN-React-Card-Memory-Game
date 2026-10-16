@@ -3,8 +3,8 @@ import { useState} from 'react';
 
 Modal.setAppElement('#root'); 
 
-export default function SettingsModal({currentPoolSize, updatePoolSize}) {
-    const [poolSizeInputValue, setPoolSizeInputValue] = useState(currentPoolSize);
+export default function SettingsModal({currentSettings, updateGameSettings}) {
+    const [updatedSettings, setUpdatedSettings] = useState(structuredClone(currentSettings));
     const [isOpen, setIsOpen] = useState(false);
 
     function openModal() {
@@ -12,13 +12,24 @@ export default function SettingsModal({currentPoolSize, updatePoolSize}) {
     }
 
     function discardChanges() {
-        setPoolSizeInputValue(currentPoolSize);
+        setUpdatedSettings(currentSettings);
         setIsOpen(false);
     }
 
     function submitChanges() {
-        updatePoolSize(poolSizeInputValue);
+        updateGameSettings(updatedSettings);
         setIsOpen(false);
+    }
+
+    function updateSettings(newVal, whatsUpdating) {
+        let updatedThisCall = structuredClone(updatedSettings);
+        switch(whatsUpdating) {
+            case 'poolSize':
+                updatedThisCall.poolSize = newVal;
+                break;
+        }
+
+        setUpdatedSettings(updatedThisCall);
     }
 
     return (
@@ -40,8 +51,8 @@ export default function SettingsModal({currentPoolSize, updatePoolSize}) {
                     type='number'
                     min='10'
                     max='1000'
-                    value={poolSizeInputValue}
-                    onChange={(e)=>{setPoolSizeInputValue(Number(e.target.value))}}>
+                    value={updatedSettings.poolSize}
+                    onChange={(e)=>{updateSettings(Number(e.target.value), 'poolSize')}}>
                 </input>
                 <div id='modalSubmitOrDiscardButtonsContainer'>
                     <button onClick={()=>{discardChanges()}}>Discard Changes</button>
