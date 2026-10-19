@@ -24,7 +24,9 @@ async function fetchPokemonData(id) {
 
 export default function App() {
     const [gameSettings, setGameSettings] = useState({
-        poolSize: 10
+        poolSize: 10,
+        primaryType: 'any',
+        secondaryType: 'any'
     });
     
     const [scoreData, setScoreData] = useState({highScore: 0, currentScore: 0});
