@@ -1,25 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Card from "./components/Card";
 import SettingsModal from "./components/SettingsModal";
 
 import "./styles/App.css";
 
-const POKEMON_MAX_ID = 1026;
+const POKEMON_MAX_ID = 1025;
 
 async function fetchPokemonData(id) {
-	let pokemon = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
-	if (!pokemon.ok) {
-		throw new Error(`'Response status: + ${pokemon.status}`);
-	}
+    let pokemon = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
+    if (!pokemon.ok) {
+        throw new Error(`'Response status: + ${pokemon.status}`);
+    }
 
-	let pokemonJson = await pokemon.json();
-	let pokemonData = {
-		id: id,
-		name: pokemonJson.species.name,
-		imageURL: pokemonJson.sprites.other['official-artwork'].front_default
-	}
+    let pokemonJson = await pokemon.json();
+    let pokemonData = {
+        id: id,
+        name: pokemonJson.species.name,
+        primaryType: pokemonJson.types[0].type.name,
+        secondaryType: pokemonJson.types[1]?.type?.name ?? "none",
+        imageURL: pokemonJson.sprites.other['official-artwork'].front_default
+    };
 
-	return pokemonData;
+    return pokemonData;
 }
 
 export default function App() {
@@ -28,54 +30,90 @@ export default function App() {
         primaryType: 'any',
         secondaryType: 'any'
     });
-    
+
+    const lessPokemonWithTypesThanPoolSize = useRef(null);
+
     const [scoreData, setScoreData] = useState({highScore: 0, currentScore: 0});
     const [scoredIDs, setScoredIDs] = useState([]);
-    
+
     const [getNewPokemon, setGetNewPokemon] = useState(true);
     const [loadingPokemon, setLoadingPokemon] = useState(true);
 
+    // Data format is defined in fetchPokemonData()
     const [pokemonData, setPokemonData] = useState([]);
-    /** Format of pokemonData objects
-     * {
-     *  id: id,
-     *  name: name,
-     *  image: image
-     * }
-     */
 
     useEffect(() => {
         // This uses an async wrapper because getting the data from the API takes some time
         async function logicWrapper() {
             // Async so the .allSettled call finishes waiting before trying to save the pokemon to state
             if (getNewPokemon) {
-                let idIncludedList = [];
-                let idCount = 0;
-                while (idCount < gameSettings.poolSize) {
-                    let id = Math.floor(Math.random() * POKEMON_MAX_ID) + 1; // IDs start at 1, so +1
-                    if (!idIncludedList.includes(id)) {
-                        idCount++;
-                        idIncludedList.push(id);
+                let processedIDs = [];
+                let numberOfIDsToGenerate = 10;
+                let numberOfPokemonSearched = 0;
+                let validPokemonData = [];
+
+                // Used to exit the search loop
+                let poolFilled = false;
+                let finalLoop = false; // True when less Pokemon exist with the primary and secondary type than the pool size
+
+                while (poolFilled === false && finalLoop === false) {
+                    // If the difference between max ID and pokemon searched is less than the number to generate, generateNewIDs would run forever
+                    // This prevents that, and tells the loop not to attempt any more loops after this call
+                    // This is usually only relevant when both primary and secondary type are defined, potentially searching the entire database of Pokemon
+                    if (numberOfPokemonSearched > POKEMON_MAX_ID - numberOfIDsToGenerate) {
+                        numberOfIDsToGenerate = POKEMON_MAX_ID - numberOfPokemonSearched;
+                        finalLoop = true;
+                    }
+
+                    let newIDs = generateNewIDs(numberOfIDsToGenerate, processedIDs);
+                    processedIDs.push(...newIDs);
+                    numberOfPokemonSearched += numberOfIDsToGenerate;
+
+                    let fetchFromPokeAPI = [];
+                    for (const id of newIDs) {
+                        fetchFromPokeAPI.push(fetchPokemonData(id));
+                    }
+                    const allPokemonData = await Promise.allSettled(fetchFromPokeAPI);
+
+                    for (let i = 0; i < allPokemonData.length; i++) {
+                        let pokeData = allPokemonData[i].value;
+
+                        if (!pokeData) {
+                            continue;
+                        }
+
+                        let validPrimaryType = true;
+                        if (gameSettings.primaryType !== "any") {
+                            validPrimaryType = typeCheck(pokeData.primaryType, "primaryType");
+                        }
+
+                        let validSecondaryType = true;
+                        if (gameSettings.secondaryType === "none") {
+                            validSecondaryType = pokeData.secondaryType === "none" ? true : false;
+                        } else if (gameSettings.secondaryType !== "any") {
+                            validSecondaryType = typeCheck(pokeData.secondaryType, "secondaryType");
+                        }
+
+                        if (validPrimaryType && validSecondaryType) {
+                            validPokemonData.push(pokeData);
+
+                            if (validPokemonData.length === gameSettings.poolSize) {
+                                poolFilled = true;
+                                break;
+                            }
+                        }
                     }
                 }
 
-                let fetchFromPokeAPI = [];
-                for (let i = 0; i < idIncludedList.length; i++) {
-                    fetchFromPokeAPI.push(fetchPokemonData(idIncludedList[i]));
-                }
-                const allPokemonData = await Promise.allSettled(fetchFromPokeAPI);
-
-                let newPokemonData = [];
-                for (let i = 0; i < allPokemonData.length; i++) {
-                    let result = allPokemonData[i];
-                    if (result.value) {
-                        newPokemonData.push(result.value);
-                    }
-                }
-
-                setPokemonData(newPokemonData);
+                setPokemonData(validPokemonData);
                 setGetNewPokemon(false);
                 setLoadingPokemon(false);
+
+                if (!poolFilled) {
+                    updateLessThanPoolSizeReference(false, validPokemonData.length);
+                } else {
+                    updateLessThanPoolSizeReference(true, -1);
+                }
 
                 return () => {
                     setLoadingPokemon(true);
@@ -85,6 +123,24 @@ export default function App() {
 
         logicWrapper();
     }, [getNewPokemon]);
+
+    function generateNewIDs(numToGenerate, alreadyProcessedIDs) {
+        let newIDs = [];
+        let idCount = 0;
+        while (idCount < numToGenerate) {
+            let id = Math.floor(Math.random() * POKEMON_MAX_ID) + 1; // IDs start at 1, so +1
+            if (!alreadyProcessedIDs.includes(id) && !newIDs.includes(id)) {
+                idCount++;
+                newIDs.push(id);
+            }
+        }
+
+        return newIDs;
+    }
+
+    function typeCheck(pokeType, primaryTypeOrSecondaryType) {
+        return pokeType === gameSettings[primaryTypeOrSecondaryType];
+    }
 
     /**
      * Logic for when a card is clicked
@@ -144,20 +200,20 @@ export default function App() {
     }
 
     function updateGameSettings(newSettings) {
-        // This will only be written for poolSize for now since that's the only setting currently made
-
         let anyChanges = false;
         // Check each setting and update as needed
         let updatedSettings = structuredClone(gameSettings);
         let newSettingsKeys = Object.keys(newSettings);
         for (const key of newSettingsKeys) {
             let keyValue;
-            switch(key) {
+            let validKeyValue = true;
+
+            switch (key) {
                 case 'poolSize':
                     if (newSettings[key] === updatedSettings[key]) {
                         continue;
                     }
-
+                
                     keyValue = newSettings[key];
                     if (!keyValue) { // This could be 0, but in this instance that would be a bad value, so the below message is fine
                         console.log(`Key '${key}' doesn't have a value, skipping`);
@@ -175,21 +231,47 @@ export default function App() {
                     } else if (keyValue > 1000) {
                         keyValue = 1000;
                     }
-                    
-                    anyChanges = true;
-                    updatedSettings[key] = keyValue;
+                    break;
+                case 'primaryType':
+                case 'secondaryType':
+                    if (newSettings[key] === updatedSettings[key]) {
+                        continue;
+                    }
+                    keyValue = newSettings[key];
                     break;
                 default:
                     console.log(`Invalid key given when updating user settings, skipping key: ${key}`);
+                    validKeyValue = false;
                     break;
+            }
+
+            if (validKeyValue) {
+                anyChanges = true;
+                updatedSettings[key] = keyValue;
             }
         }
 
         if (anyChanges) {
             setGameSettings(updatedSettings);
-            resetGameScores();
-            setGetNewPokemon(true);
+            getNewPokemonAndResetNecessarySettings();
         }
+    }
+
+    function updateLessThanPoolSizeReference(shouldBeHidden, numberOfPokemonFound) {
+        if (shouldBeHidden) {
+            lessPokemonWithTypesThanPoolSize.current.hidden = true;
+        } else {
+            lessPokemonWithTypesThanPoolSize.current.hidden = false;
+            lessPokemonWithTypesThanPoolSize.current.innerText = `Any pokemon with primary type '${gameSettings.primaryType}' and secondary type '${gameSettings.secondaryType}' found, but there aren't enough to fill the current pool size.
+            Number found / Pool size: ${numberOfPokemonFound} / ${gameSettings.poolSize}`;
+        }
+    }
+
+    function getNewPokemonAndResetNecessarySettings() {
+        setGetNewPokemon(true);
+        setLoadingPokemon(true);
+        resetGameScores();
+        updateLessThanPoolSizeReference(true, -1);
     }
 
     return (
@@ -203,10 +285,11 @@ export default function App() {
                 currentSettings={gameSettings}
                 updateGameSettings={updateGameSettings}
             ></SettingsModal>
+            <div ref={lessPokemonWithTypesThanPoolSize}></div>
+            <button onClick={() => {getNewPokemonAndResetNecessarySettings()}}>Get New Pokemon</button>
+
             <div id="cardContainer">
-                {loadingPokemon === true ? (
-                    <div>Loading Data</div>
-                ) : (
+                {loadingPokemon === true ? <div>Fetching Pokemon</div> : 
                     pokemonData.map((pData) => (
                         <Card
                             key={pData.id}
@@ -216,16 +299,8 @@ export default function App() {
                             handleClick={handleCardClick}
                         ></Card>
                     ))
-                )}
+                }
             </div>
-            <button
-                onClick={() => {
-                    setGetNewPokemon(true);
-                    updateScoreState(-1);
-                }}
-            >
-                Get New Pokemon
-            </button>
         </>
     );
 }
