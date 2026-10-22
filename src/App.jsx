@@ -30,8 +30,9 @@ export default function App() {
         primaryType: 'any',
         secondaryType: 'any'
     });
-
-    const lessPokemonWithTypesThanPoolSize = useRef(null);
+    
+    // This is used by a div to avoid confusion for users when the number of Pokemon retrieved doesn't match the size they set
+    const lessPokemonMatchSettingsThanPoolSize = useRef(null);
 
     const [scoreData, setScoreData] = useState({highScore: 0, currentScore: 0});
     const [scoredIDs, setScoredIDs] = useState([]);
@@ -110,9 +111,9 @@ export default function App() {
                 setLoadingPokemon(false);
 
                 if (!poolFilled) {
-                    updateLessThanPoolSizeReference(false, validPokemonData.length);
+                    updateLessMatchSettingsReference(false, validPokemonData.length);
                 } else {
-                    updateLessThanPoolSizeReference(true, -1);
+                    updateLessMatchSettingsReference(true, -1);
                 }
 
                 return () => {
@@ -257,12 +258,12 @@ export default function App() {
         }
     }
 
-    function updateLessThanPoolSizeReference(shouldBeHidden, numberOfPokemonFound) {
+    function updateLessMatchSettingsReference(shouldBeHidden, numberOfPokemonFound) {
         if (shouldBeHidden) {
-            lessPokemonWithTypesThanPoolSize.current.hidden = true;
+            lessPokemonMatchSettingsThanPoolSize.current.hidden = true;
         } else {
-            lessPokemonWithTypesThanPoolSize.current.hidden = false;
-            lessPokemonWithTypesThanPoolSize.current.innerText = `Any pokemon with primary type '${gameSettings.primaryType}' and secondary type '${gameSettings.secondaryType}' found, but there aren't enough to fill the current pool size.
+            lessPokemonMatchSettingsThanPoolSize.current.hidden = false;
+            lessPokemonMatchSettingsThanPoolSize.current.innerText = `Any pokemon with primary type '${gameSettings.primaryType}' and secondary type '${gameSettings.secondaryType}' found, but there aren't enough to fill the current pool size.
             Number found / Pool size: ${numberOfPokemonFound} / ${gameSettings.poolSize}`;
         }
     }
@@ -271,7 +272,7 @@ export default function App() {
         setGetNewPokemon(true);
         setLoadingPokemon(true);
         resetGameScores();
-        updateLessThanPoolSizeReference(true, -1);
+        updateLessMatchSettingsReference(true, -1);
     }
 
     return (
@@ -285,7 +286,7 @@ export default function App() {
                 currentSettings={gameSettings}
                 updateGameSettings={updateGameSettings}
             ></SettingsModal>
-            <div ref={lessPokemonWithTypesThanPoolSize}></div>
+            <div ref={lessPokemonMatchSettingsThanPoolSize}></div>
             <button onClick={() => {getNewPokemonAndResetNecessarySettings()}}>Get New Pokemon</button>
 
             <div id="cardContainer">
