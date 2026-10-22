@@ -42,6 +42,7 @@ export default function App() {
 
     // Data format is defined in fetchPokemonData()
     const [pokemonData, setPokemonData] = useState([]);
+    const [cachedPokemonData, setCachedPokemonData] = useState({data: {}});
 
     useEffect(() => {
         // This uses an async wrapper because getting the data from the API takes some time
@@ -56,11 +57,15 @@ export default function App() {
                 // Used to exit the search loop
                 let poolFilled = false;
                 let finalLoop = false; // True when less Pokemon exist with the primary and secondary type than the pool size
+                
+                // Used to update cached pokemon if any were added
+                let cachedData = cachedPokemonData.data;
+                let anyPokemonFetched = false;
 
                 while (poolFilled === false && finalLoop === false) {
                     // If the difference between max ID and pokemon searched is less than the number to generate, generateNewIDs would run forever
                     // This prevents that, and tells the loop not to attempt any more loops after this call
-                    // This is usually only relevant when both primary and secondary type are defined, potentially searching the entire database of Pokemon
+                    // This is usually only relevant when multiple settings besides poolSize are defined, potentially searching the entire database of Pokemon
                     if (numberOfPokemonSearched > POKEMON_MAX_ID - numberOfIDsToGenerate) {
                         numberOfIDsToGenerate = POKEMON_MAX_ID - numberOfPokemonSearched;
                         finalLoop = true;
@@ -70,18 +75,40 @@ export default function App() {
                     processedIDs.push(...newIDs);
                     numberOfPokemonSearched += numberOfIDsToGenerate;
 
-                    let fetchFromPokeAPI = [];
+                    let allPokemonData = [];
+                    let fetchIDs = [];
                     for (const id of newIDs) {
-                        fetchFromPokeAPI.push(fetchPokemonData(id));
+                        let cachedPokemon = cachedData[id];
+                        if (cachedPokemon) {
+                            allPokemonData.push(cachedPokemon);
+                        } else {
+                            fetchIDs.push(id);
+                        }
                     }
-                    const allPokemonData = await Promise.allSettled(fetchFromPokeAPI);
+
+                    if (fetchIDs.length > 0) {
+                        let fetchFromPokeAPI = [];
+                        for (const id of fetchIDs) {
+                            fetchFromPokeAPI.push(fetchPokemonData(id));
+                        }
+                        const fetchedPokemonData = await Promise.allSettled(fetchFromPokeAPI);
+
+                        for (let i = 0; i < fetchedPokemonData.length; i++) {
+
+                            let pokeData = fetchedPokemonData[i].value;
+
+                            if (!pokeData) {
+                                continue;
+                            }
+
+                            anyPokemonFetched = true;
+                            allPokemonData.push(pokeData);
+                            cachedData[pokeData.id] = pokeData;
+                        }
+                    }      
 
                     for (let i = 0; i < allPokemonData.length; i++) {
-                        let pokeData = allPokemonData[i].value;
-
-                        if (!pokeData) {
-                            continue;
-                        }
+                        let pokeData = allPokemonData[i];
 
                         let validPrimaryType = true;
                         if (gameSettings.primaryType !== "any") {
@@ -109,6 +136,10 @@ export default function App() {
                 setPokemonData(validPokemonData);
                 setGetNewPokemon(false);
                 setLoadingPokemon(false);
+
+                if (anyPokemonFetched) {
+                    updateCachedPokemonData(cachedData);
+                }
 
                 if (!poolFilled) {
                     updateLessMatchSettingsReference(false, validPokemonData.length);
@@ -266,6 +297,10 @@ export default function App() {
             lessPokemonMatchSettingsThanPoolSize.current.innerText = `Any pokemon with primary type '${gameSettings.primaryType}' and secondary type '${gameSettings.secondaryType}' found, but there aren't enough to fill the current pool size.
             Number found / Pool size: ${numberOfPokemonFound} / ${gameSettings.poolSize}`;
         }
+    }
+
+    function updateCachedPokemonData(newData) {
+        setCachedPokemonData({data: newData});
     }
 
     function getNewPokemonAndResetNecessarySettings() {
