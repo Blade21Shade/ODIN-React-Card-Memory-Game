@@ -142,9 +142,9 @@ export default function App() {
                 }
 
                 if (!poolFilled) {
-                    updateLessMatchSettingsReference(false, validPokemonData.length);
+                    updateLessPokemonMatchSettingsThanPoolSizeReference(false, validPokemonData.length);
                 } else {
-                    updateLessMatchSettingsReference(true, -1);
+                    updateLessPokemonMatchSettingsThanPoolSizeReference(true, -1);
                 }
 
                 return () => {
@@ -289,14 +289,51 @@ export default function App() {
         }
     }
 
-    function updateLessMatchSettingsReference(shouldBeHidden, numberOfPokemonFound) {
+    function updateLessPokemonMatchSettingsThanPoolSizeReference(shouldBeHidden, numberOfPokemonFound) {
         if (shouldBeHidden) {
             lessPokemonMatchSettingsThanPoolSize.current.hidden = true;
-        } else {
-            lessPokemonMatchSettingsThanPoolSize.current.hidden = false;
-            lessPokemonMatchSettingsThanPoolSize.current.innerText = `Any pokemon with primary type '${gameSettings.primaryType}' and secondary type '${gameSettings.secondaryType}' found, but there aren't enough to fill the current pool size.
-            Number found / Pool size: ${numberOfPokemonFound} / ${gameSettings.poolSize}`;
+            return;
         }
+
+        lessPokemonMatchSettingsThanPoolSize.current.hidden = false;
+        
+        // Find settings that should be in the message
+        let toDisplay = 'Any Pokemon ';
+        let toDisplayArray = [];
+
+        if (gameSettings.primaryType !== 'any') {
+            toDisplayArray.push(`with primary type ${gameSettings.primaryType}`);
+        }
+
+        if (gameSettings.secondaryType !== 'any') {
+            toDisplayArray.push(`with secondary type ${gameSettings.secondaryType}`);
+        }
+
+        // If generation is added as a setting, the string would be 'from generation ${...}', so with can't be generally used
+
+        // Construct message
+        if (toDisplayArray.length === 1) {
+            toDisplay += toDisplayArray[0];
+        } else if (toDisplayArray.length === 2) {
+            toDisplay += toDisplayArray[0] + ' and ' + toDisplayArray[1];
+        } else if (toDisplayArray.length > 2) {
+            toDisplay += toDisplayArray[0];
+            for (let i = 1; i < toDisplayArray.length - 1; i++) {
+                toDisplay += ', ';
+                toDisplay += toDisplayArray[i];
+            }
+            toDisplay += ' and ' + toDisplayArray[toDisplayArray.length - 1];
+        }
+
+        if (toDisplayArray.length > 0) {
+            toDisplay += ` found, but there weren't enough to fill the given pool size.\nYou can play with the Pokemon that were found.`;
+        } else {
+            toDisplay = 'No issues were found.'
+        }
+
+        toDisplay += `\nNumber found / Pool size: ${numberOfPokemonFound} / ${gameSettings.poolSize}`;
+
+        lessPokemonMatchSettingsThanPoolSize.current.innerText = toDisplay;
     }
 
     function updateCachedPokemonData(newData) {
@@ -307,7 +344,7 @@ export default function App() {
         setGetNewPokemon(true);
         setLoadingPokemon(true);
         resetGameScores();
-        updateLessMatchSettingsReference(true, -1);
+        updateLessPokemonMatchSettingsThanPoolSizeReference(true, -1);
     }
 
     return (
