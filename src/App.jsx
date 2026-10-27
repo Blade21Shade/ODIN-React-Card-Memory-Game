@@ -349,20 +349,22 @@ export default function App() {
 
     return (
         <>
-            <div id="scoreContainer">
-                <p>Current Score: {scoreData.currentScore}</p>
-                <p>High Score: {scoreData.highScore}</p>
-                <button onClick={()=>{updateScoreState(-1)}}>Reset Scores</button>
+            <div id='nonCardContainer'>
+                <div id="scoreContainer">
+                    <p>Current Score: {scoreData.currentScore}</p>
+                    <p>High Score: {scoreData.highScore}</p>
+                    <button onClick={()=>{updateScoreState(-1)}}>Reset Scores</button>
+                </div>
+                <SettingsModal
+                    currentSettings={gameSettings}
+                    updateGameSettings={updateGameSettings}
+                ></SettingsModal>
+                <div ref={lessPokemonMatchSettingsThanPoolSize}></div>
+                <button onClick={() => {getNewPokemonAndResetNecessarySettings()}}>Get New Pokemon</button>
             </div>
-            <SettingsModal
-                currentSettings={gameSettings}
-                updateGameSettings={updateGameSettings}
-            ></SettingsModal>
-            <div ref={lessPokemonMatchSettingsThanPoolSize}></div>
-            <button onClick={() => {getNewPokemonAndResetNecessarySettings()}}>Get New Pokemon</button>
 
             <div id="cardContainer">
-                {loadingPokemon === true ? <div>Fetching Pokemon</div> : 
+                {loadingPokemon === true ? <div id='loadingPokemonText'>Fetching Pokemon</div> : 
                     pokemonData.map((pData) => (
                         <Card
                             key={pData.id}
