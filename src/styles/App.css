@@ -1,0 +1,30 @@
+#loadingPokemonText {
+    color: white;
+    font-size: large;
+}
+
+#cardContainer {
+    justify-self: center;
+
+    background: linear-gradient(90deg, red, blue);
+    padding: 50px;
+
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 50px;
+}
+
+/* Card */
+.cardImage {
+    width: 360px;
+    height: auto;
+}
+
+.cardText {
+    font-size: large;
+}
+
+.cardButton:hover {
+    background-color: rgb(202, 202, 202);
+}
