@@ -359,9 +359,10 @@ export default function App() {
                     currentSettings={gameSettings}
                     updateGameSettings={updateGameSettings}
                 ></SettingsModal>
-                <div ref={lessPokemonMatchSettingsThanPoolSize}></div>
                 <button onClick={() => {getNewPokemonAndResetNecessarySettings()}}>Get New Pokemon</button>
             </div>
+
+            <div ref={lessPokemonMatchSettingsThanPoolSize}></div>
 
             <div id="cardContainer">
                 {loadingPokemon === true ? <div id='loadingPokemonText'>Fetching Pokemon</div> : 

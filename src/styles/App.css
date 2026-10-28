@@ -1,3 +1,15 @@
+#nonCardContainer {
+    display: grid;
+    grid-template-columns: repeat(3, 150px);
+    grid-template-rows: 150px;
+
+    align-items: center;
+}
+
+#nonCardContainer button {
+    padding: 10px;
+}
+
 #loadingPokemonText {
     color: white;
     font-size: large;
