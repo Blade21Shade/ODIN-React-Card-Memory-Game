@@ -1,6 +1,8 @@
 import Modal from 'react-modal'
 import { useState} from 'react';
 
+import "../styles/SettingsModal.css"
+
 Modal.setAppElement('#root'); 
 
 export default function SettingsModal({currentSettings, updateGameSettings}) {
@@ -63,61 +65,69 @@ export default function SettingsModal({currentSettings, updateGameSettings}) {
                 isOpen = {isOpen}
                 shouldCloseOnEsc = {false}
             >
-                <label 
-                    htmlFor='updatePoolSizeCountInput'
-                    title='The number of pokemon you want to guess from. A larger number will be harder game. Minimum of 10, Maximum of 1000'
-                >
-                    Pokemon Pool Size: 
-                </label>
-                <input
-                    name='updatePoolSizeCountInput'
-                    id='updatePoolSizeCountInput'
-                    type='number'
-                    min='10'
-                    max='1000'
-                    value={updatedSettings.poolSize}
-                    onChange={(e)=>{updateSettings(Number(e.target.value), 'poolSize')}}>
-                </input>
-                
-                <label
-                    htmlFor='primaryType'
-                    title='The primary type all pokemon in the pool must have.'
-                >
-                    Select a type:
-                </label>
-                <select
-                    name='primaryType'
-                    id='primaryType'
-                    value={updatedSettings.primaryType}
-                    onChange={(e)=>{updateSettings(e.target.value, 'primaryType')}}
-                >
-                    {primaryTypes.map((type)=>{
-                        return <option key={'primary' + type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
-                    })};
-                </select>
+                <div id='modalSettingsContainer'>
+                    <div>
+                        <label 
+                            htmlFor='updatePoolSizeCountInput'
+                            title='The number of pokemon you want to guess from. A larger number will be harder game. Minimum of 10, Maximum of 1000'
+                        >
+                            Pokemon Pool Size
+                        </label>
+                        <input
+                            name='updatePoolSizeCountInput'
+                            id='updatePoolSizeCountInput'
+                            type='number'
+                            min='10'
+                            max='1000'
+                            value={updatedSettings.poolSize}
+                            onChange={(e)=>{updateSettings(Number(e.target.value), 'poolSize')}}>
+                        </input>
+                    </div>
+                    
+                    <div>
+                        <label
+                            htmlFor='primaryType'
+                            title='The primary type all pokemon in the pool must have.'
+                        >
+                            Primary type
+                        </label>
+                        <select
+                            name='primaryType'
+                            id='primaryType'
+                            value={updatedSettings.primaryType}
+                            onChange={(e)=>{updateSettings(e.target.value, 'primaryType')}}
+                        >
+                            {primaryTypes.map((type)=>{
+                                return <option key={'primary' + type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                            })};
+                        </select>
+                    </div>
 
-                <label
-                    htmlFor='secondaryType'
-                    title='The secondary type all pokemon in the pool must have.
-                    Any includes Pokemon with only a primary type.
-                    None excludes Pokemon with a secondary type.'
-                >
-                    Select a type:
-                </label>
-                <select
-                    name='secondaryType'
-                    id='secondaryType'
-                    value={updatedSettings.secondaryType}
-                    onChange={(e)=>{updateSettings(e.target.value, 'secondaryType')}}
-                >
-                    {secondaryTypes.map((type)=>{
-                        return <option key={'secondary' + type} value={type} disabled={type === disabledSecondaryType ? true : false}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
-                    })};
-                </select>
+                    <div>
+                        <label
+                            htmlFor='secondaryType'
+                            title='The secondary type all pokemon in the pool must have.
+                            Any includes Pokemon with only a primary type.
+                            None excludes Pokemon with a secondary type.'
+                        >
+                            Secondary type
+                        </label>
+                        <select
+                            name='secondaryType'
+                            id='secondaryType'
+                            value={updatedSettings.secondaryType}
+                            onChange={(e)=>{updateSettings(e.target.value, 'secondaryType')}}
+                        >
+                            {secondaryTypes.map((type)=>{
+                                return <option key={'secondary' + type} value={type} disabled={type === disabledSecondaryType ? true : false}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                            })};
+                        </select>
+                    </div>
+                </div>
 
                 <div id='modalSubmitOrDiscardButtonsContainer'>
-                    <button onClick={()=>{discardChanges()}}>Discard Changes</button>
                     <button onClick={()=>{submitChanges()}}>Submit Changes</button>
+                    <button onClick={()=>{discardChanges()}}>Discard Changes</button>
                 </div>
             </Modal>
         </div>
