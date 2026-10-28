@@ -19,7 +19,9 @@
     justify-self: center;
 
     background: linear-gradient(90deg, red, blue);
-    padding: 50px;
+    width: 95vw;
+    padding: 30px;
+    margin: 10px;
 
     display: flex;
     flex-wrap: wrap;
